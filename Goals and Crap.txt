@@ -1,0 +1,15 @@
+Goal of project:
+Make a easy setup application/website where someone can make there own scripts, designed for starting up a workday, working with buttons etc.
+- Parsing knowledge
+- Batch knowledge
+- Writing safe code
+
+
+What do I want to do with my project today:
+	- Config file complete
+	- Work out how we are going to parse steps
+	
+	
+Reminders before push:
+- Check for replacement BULLSHIT
+- Keep stepsFile private
