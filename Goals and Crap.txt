@@ -12,4 +12,4 @@ What do I want to do with my project today:
 	
 Reminders before push:
 - Check for replacement BULLSHIT
-- Keep stepsFile private
+- Keep stepsFile private, NO NEED ANYMORE

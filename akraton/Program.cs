@@ -9,9 +9,11 @@ using System.Text.Json;
 
 // Starter, going to make it more dynamica
 class Program
-{   
-     // Grab win32 we going to need it
-    [DllImport("user32.dll")]
+{
+  
+
+// Grab win32 we going to need it
+[DllImport("user32.dll")]
     static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
 
     // Class for the config file
@@ -25,15 +27,31 @@ class Program
 
     static void Main(string[] args)
     {
+        // Lets check to see what operating system we are running
+        string os = "UNKNOWN";
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            os = "Windows";
+        }
+
+        if (os != "Windows")
+        {
+            Console.WriteLine("ERROR 1: Currently we only support Windows. Sorry yall");
+            return;
+        }
+
         //Lets grab our config file we gots
         var configBuilder = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
+
+        IConfiguration systemConfig = configBuilder.Build();
+
+
         // Lets store our steps JSON file for when we execute out scripts
         string stepsJson = File.ReadAllText("stepsFile.json");
-     
-        IConfiguration systemConfig = configBuilder.Build();
 
         
 
@@ -50,18 +68,46 @@ class Program
             .GetSection("AppSettings")
             .Get<AppSettings>();
 
-        //We need to parse the steps file
 
+       
+        //This moves the direction of where I tell it
+        //Taking this function away, want to use it later however need to find a way to use it effectivley
+        void moveMyWindow (string urlTitle)
+        {
+            string[] parts = urlTitle.Split('.');
 
-        // Open up youtube
-        //Process.Start(@"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe", "--new-window https://www.youtube.com/watch?v=81tWAoRcngo&list=RDx3hoYr2dZfY&index=3");
+            string windowTitle = parts[1];
 
-        //Thread.Sleep(2000);
+            Console.WriteLine(windowTitle);
+
+            //win32 stuff, grabs the group of windows then moves it to the cords
+            Process[] windowProcs = Process.GetProcessesByName(browserType);
+            foreach (var p in windowProcs)
+            {
+
+                Console.WriteLine("JCV:" + windowTitle);
+                if (!string.IsNullOrEmpty(p.MainWindowTitle) &&
+                    p.MainWindowTitle.Contains(windowTitle, StringComparison.OrdinalIgnoreCase)
+)
+                {
+                    Console.WriteLine("This window is: " + windowTitle);
+
+                    MoveWindow(p.MainWindowHandle, 5, 1, 5, 5, true);
+
+                break;
+            }
+
+        }
+
+        }
 
         //We are going to iterate through the JSON file 
-        foreach (var step in steps!) //JCV WHY ! ARE YOU MAD
+        foreach (var step in steps!) 
         {
             Console.WriteLine($"{step.Key}");
+
+            // If the user wants multiple tabs in one window we will combine it in on the batch end
+            string combinedURL = "";
 
             foreach (var pair in step.Value)
             {
@@ -69,35 +115,19 @@ class Program
                 string url = pair.Value;
 
                 Console.WriteLine($"{key}:{url}");
-                Process.Start(browserLocation, "--new-window " + url);
+                combinedURL += url + " ";
+
             }
+        
+            Process.Start(browserLocation, "--new-window " + combinedURL);
 
-        }
-
-        //Process.Start(browserLocation + "--new-window");
-
-        // Grab all of the processes that are edge and youtube then lets go move it to my lfet side
-        Process[] procs = Process.GetProcessesByName(browserType);
-        foreach (var p in procs)
-        {
-            if (!string.IsNullOrEmpty(p.MainWindowTitle) &&
-                p.MainWindowTitle.Contains("Youtube"))
-            {
-                Console.WriteLine("This window is: " + p.MainWindowTitle);
-
-                //MoveWindow(p.MainWindowHandle, 1920, 0, 1920, 1080, true);
-
-                break;
-            }
-
+            //move it to where the user wants it
+            //Taking this out for now
+            //moveMyWindow(combinedURL);
         }
 
 
     }
-
-
-
-
 
 
 }
