@@ -11,10 +11,10 @@ using System.Text.Json;
 class Program
 {
   
-
 // Grab win32 we going to need it
 [DllImport("user32.dll")]
     static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
+    static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     // Class for the config file
     public class AppSettings
@@ -22,6 +22,21 @@ class Program
         public string BrowserType { get; set; }
         public string BrowserLocation { get; set; }
 
+    }
+
+    // Class for JSON steps file
+    public class WindowPos
+    {
+        public int WindowXCords { get; set; }
+        public int WindowYCords { get; set; }
+        public int WindowWidth { get; set; }
+        public int WindowHeight { get; set; }
+    }
+
+    public class StepCategory
+    {
+        public Dictionary<string, string>? Urls { get; set; }
+        public WindowPos? WindowPos { get; set; }
     }
 
 
@@ -53,7 +68,6 @@ class Program
         // Lets store our steps JSON file for when we execute out scripts
         string stepsJson = File.ReadAllText("stepsFile.json");
 
-        
 
         // Make this a loop later
         string browserType = systemConfig["AppSettings:BrowserType"];
@@ -61,18 +75,15 @@ class Program
 
 
         // deserialize the JSON
-        var steps = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(stepsJson);
+        var steps = JsonSerializer.Deserialize<Dictionary<string, StepCategory>>(stepsJson);
 
         //Push it into the Class so we can use it later
-        var settings = systemConfig
-            .GetSection("AppSettings")
-            .Get<AppSettings>();
-
+        var settings = systemConfig.GetSection("AppSettings").Get<AppSettings>();
 
        
         //This moves the direction of where I tell it
         //Taking this function away, want to use it later however need to find a way to use it effectivley
-        void moveMyWindow (string urlTitle)
+        void moveMyWindow (string urlTitle, int x, int y, int width, int height)
         {
             string[] parts = urlTitle.Split('.');
 
@@ -84,20 +95,14 @@ class Program
             Process[] windowProcs = Process.GetProcessesByName(browserType);
             foreach (var p in windowProcs)
             {
-
-                Console.WriteLine("JCV:" + windowTitle);
-                if (!string.IsNullOrEmpty(p.MainWindowTitle) &&
-                    p.MainWindowTitle.Contains(windowTitle, StringComparison.OrdinalIgnoreCase)
-)
-                {
+                
                     Console.WriteLine("This window is: " + windowTitle);
 
-                    MoveWindow(p.MainWindowHandle, 5, 1, 5, 5, true);
+                    MoveWindow(p.MainWindowHandle, x, y, width, height, true);
 
-                break;
+                    //ShowWindow(p.MainWindowHandle, 3);// Magic numver 3 is a WIN32 thing where it controls the window size, I am maximxing the size of the window as a quick fix
+
             }
-
-        }
 
         }
 
@@ -109,7 +114,7 @@ class Program
             // If the user wants multiple tabs in one window we will combine it in on the batch end
             string combinedURL = "";
 
-            foreach (var pair in step.Value)
+            foreach (var pair in step.Value.Urls)
             {
                 string key = pair.Key;
                 string url = pair.Value;
@@ -121,9 +126,11 @@ class Program
         
             Process.Start(browserLocation, "--new-window " + combinedURL);
 
-            //move it to where the user wants it
-            //Taking this out for now
-            //moveMyWindow(combinedURL);
+            Thread.Sleep(3000); // wait a second, windows needs to open the window so we can move it
+
+            //move it to where the user wants it: This function is flawed and needs to be worked on some more for user edgfe cases
+            var windowJSONSettings = step.Value.WindowPos;
+            moveMyWindow(combinedURL, windowJSONSettings.WindowXCords, windowJSONSettings.WindowYCords, windowJSONSettings.WindowWidth, windowJSONSettings.WindowHeight);
         }
 
 
